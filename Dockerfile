@@ -1,6 +1,6 @@
 # Базовый образ с КриптоПро
 #FROM debian:stretch-slim as cryptopro-generic
-FROM node:stretch-slim as cryptopro-generic
+FROM node:bookworm-slim as cryptopro-generic
 
 # Устанавливаем timezone
 ENV TZ="Europe/Moscow" \

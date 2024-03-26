@@ -1,10 +1,10 @@
 import { exec } from 'child_process'
-import { logError } from './logUtils'
-import { CERTIFICATE_PIN } from '../config'
-import { InternalException } from '../types/errors'
-import * as tempy from 'tempy'
 import { readFile, unlink, writeFile } from 'fs/promises'
 import { dirname } from 'path'
+import * as tempy from 'tempy'
+import { CERTIFICATE_PIN } from '../config'
+import { InternalException } from '../types/errors'
+import { logError } from './logUtils'
 
 const execute = (command: string): Promise<string> => {
   return new Promise((resolve, reject) => {
@@ -40,12 +40,14 @@ export const cryptoProSign = async (str: string): Promise<string> => {
     await writeFile(tempFile, str)
     const dirName = dirname(tempFile)
     // eslint-disable-next-line max-len
-    const cmd = `cryptcp -signf -dir "${dirName}" -thumbprint "${containerHash}" -norev -nochain "${tempFile}" -cert -der -strict -hashAlg "1.2.643.7.1.1.2.2" -detached -pin "${CERTIFICATE_PIN}"`
+	const container = String.raw`\\.\HDIMAGE\IPK_NONAME`
+	const cmd = `csptest -keys -cont '${container}' -password '${CERTIFICATE_PIN}' -sign GOST12_256 -in "${tempFile}" -out "${signedFile}" -keytype exchange`
     await execute(cmd)
     const result = await readFile(signedFile)
     await unlink(signedFile)
     await unlink(tempFile)
-    return result.toString('base64')
+	const reversedContent = Buffer.from(result).reverse();
+	return reversedContent.toString('base64url');
   } catch (e) {
     logError(`sign error ${e}`, '', 'СryptoProSign')
     throw new InternalException('Failed to create sign. It seems that service is not correctly configured')
